@@ -1,0 +1,59 @@
+setwd("D:/DSG/Grainger/Model/Model_2")
+nc1 <- read.csv("input_dev_data.csv",header=T)
+nc2<-read.csv("input_test_data_new_1.csv",header=T)
+nc3<-read.csv("input_val_data_new_1.csv",header=T)
+str(nc1)
+?str
+#install.packages("e1071")
+#install.packages("gmodels")
+#install.packages("ggplot2")
+#install.packages("reshape2")
+library(e1071)
+library(gmodels)
+library(ggplot2)
+library(reshape2)
+source("ExtendedModifiedNB_latest.r")
+resp_var1 <- names(nc1)[c(15)]
+dynamic_var1 <- names(nc1)[c(21:40)]
+static_var1 <- names(nc1)[c(2,5,6,7,9,11,14)]
+mNB2 <-modifiedNB(nc1,resp_var=resp_var1,static_var = static_var1,dynamic_var = dynamic_var1,equal_prior = TRUE,Order=1,Split = TRUE,train_prop = 0.70)
+test <- predict(mNB2,nc2,probs=TRUE)
+#train<- predict(mNB2,nc1,probs = TRUE)
+#write.csv(train,"new_train_res_27_2.csv")
+#valid<- predict(mNB2,nc2,probs = TRUE)
+#print(valid)
+#write.csv(valid,"repeat_valid_res_3.csv")
+save(mNB2,file='mnb_p2p_seg1.rda')
+landing_N = data.frame(mNB2
+                       @TPM[["N"]][["TPM"]][[1]])
+colnames(landing_N) <- c("pageType","score_N")
+landing_Y = data.frame(mNB2@TPM[["Y"]][["TPM"]][[1]])
+colnames(landing_Y) <- c("pageType","score_Y")
+landing = merge(landing_Y,landing_N,by = "pageType",all = T)
+
+mNB2 <- load("mnb_p2p_seg1.rda")
+str(mNB2@TPM)
+transition_N = data.frame(mNB2@TPM[["N"]][["TPM"]][[2]])
+colnames(transition_N) <- c("pageType_prev","pageType_current","score_N")
+transition_Y = data.frame(mNB2@TPM[["Y"]][["TPM"]][[2]])
+colnames(transition_Y) <- c("pageType_prev","pageType_current","score_Y")
+transition = merge(transition_Y,transition_N,by = c("pageType_prev","pageType_current"),all = T)
+
+for (ik in 1:length(names(mNB2@naiveBayes$tables))){
+  if(ik ==1)
+  {
+    tab1 = t(mNB2@naiveBayes$tables[[ik]])
+    tab1 <- cbind(names(mNB2@naiveBayes$tables)[ik],rownames(tab1),tab1)
+    colnames(tab1) <- c("var_name","var_category","score_N","score_Y")
+  } else{
+    tab2 = t(mNB2@naiveBayes$tables[[ik]])
+    tab2 <- cbind(names(mNB2@naiveBayes$tables)[ik],rownames(tab2),tab2)
+    colnames(tab2) <- c("var_name","var_category","score_N","score_Y")
+    tab1 <- rbind(tab1,tab2)
+  }
+}
+
+write.table(landing,file="new_chat_First_page_Score_tp3.csv",sep=",")
+write.table(tab1,file="new_chat_Static_var_score_tp3.csv",sep=",")
+write.table(transition,file="new_chat_TPM_table_tp3.csv",sep=",")
+
