@@ -1,0 +1,87 @@
+#setting the location of directory
+setwd("C:/Users/gautam.v/Desktop/Sears_Model")
+
+#installing required packages
+install.packages("e1071")
+install.packages("gmodels")
+install.packages("ggplot2")
+install.packages("reshape2")
+library(e1071)
+library(gmodels)
+library(ggplot2)
+library(reshape2)
+source("ExtendedModifiedNB.r")
+
+#loading the data in R
+dev <- read.csv("dev.csv",header=T)
+
+#declaring the static, dynamic and response variable
+static_var = c("internal_search_flag_n","initial_referrer_cat","pro_accts_last_7days","button_accts_last_7days","repeatvisit","dd","OS_cat")
+resp_var = c("pcf_flag_n")
+dynamic_var = colnames(dev)[07:26]
+
+#getting the model equation
+mNB <-modifiedNB(dev,resp_var=resp_var,static_var = static_var,dynamic_var = dynamic_var,equal_prior = TRUE,Order=1)
+
+#getting the scores
+sample_out <- predict(mNB,dev,probs = TRUE)
+
+#exporting the results
+write.csv(sample_out,"datadev.csv")
+
+
+#model validation with out of time sample
+time <- read.csv("time.csv",header=T)
+sample_out <- predict(mNB,time,probs = TRUE)
+write.csv(sample_out,"datatime.csv")
+
+#model validation with out of space validation
+space <- read.csv("space.csv",header=T)
+sample_out <- predict(mNB,time,probs = TRUE)
+write.csv(sample_out,"datatime.csv")
+
+
+#	landing page probabilites
+landing_N						=	data.frame(mNB@TPM[["N"]][["TPM"]][[1]])
+colnames(landing_N) 			<-	c("pageType","score_N")
+landing_Y 						=	data.frame(mNB@TPM[["Y"]][["TPM"]][[1]])
+colnames(landing_Y) 			<-	c("pageType","score_Y")
+landing 						=	merge(landing_N,landing_Y,by = "pageType",all = T)
+write.csv (  landing, "DEV_LandingPageProababilities.csv" )
+
+
+##extract static scores
+
+transition_N = data.frame(mNB@TPM[["N"]][["TPM"]][[2]])
+colnames(transition_N) <- c("pageType_prev","pageType_current","score_N")
+transition_Y = data.frame(mNB@TPM[["Y"]][["TPM"]][[2]])
+colnames(transition_Y) <- c("pageType_prev","pageType_current","score_Y")
+transition = merge(transition_Y,transition_N,by = c("pageType_prev","pageType_current"),all = T)
+
+
+for (ik in 1:length(names(mNB@naiveBayes$tables))){
+  if(ik ==1)
+  {
+    tab1 = t(mNB@naiveBayes$tables[[ik]])
+    tab1 <- cbind(names(mNB@naiveBayes$tables)[ik],rownames(tab1),tab1)
+    colnames(tab1) <- c("var_name","var_category","score_N","score_Y")
+  } else{
+    tab2 = t(mNB@naiveBayes$tables[[ik]])
+    tab2 <- cbind(names(mNB@naiveBayes$tables)[ik],rownames(tab2),tab2)
+    colnames(tab2) <- c("var_name","var_category","score_N","score_Y")
+    tab1 <- rbind(tab1,tab2)
+  }
+}
+tab1
+
+write.csv(tab1,file="Dev_Static_Var_Score.csv")
+
+##extract TPM
+
+transition_N = data.frame(mNB@TPM[["N"]][["TPM"]][[2]])
+colnames(transition_N) <- c("pageType_prev","pageType_current","score_N")
+transition_Y = data.frame(mNB@TPM[["Y"]][["TPM"]][[2]])
+colnames(transition_Y) <- c("pageType_prev","pageType_current","score_Y")
+transition = merge(transition_Y,transition_N,by = c("pageType_prev","pageType_current"),all = T)
+
+write.csv(transition,file="Dev_TPM_Scores.csv")
