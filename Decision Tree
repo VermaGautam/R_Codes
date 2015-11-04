@@ -1,0 +1,177 @@
+ setwd("D:\DSG\Grainger\Model\LR")
+model_data_page4 = read.csv("LR_SO_page_4.csv", header = TRUE,sep = ",")
+valid_data_page4 = read.csv("LR_SO_page_4_val.csv", header = TRUE,sep = ",")
+
+model1=glm(purchase_flag~
+             (google_flag+
+                yahoo_flag+
+                bing_flag+
+                repeat_purchase+
+                chrome_flag+
+                hour_0_7+
+                hour_10_14+
+                hour_15_17+
+                hour_18_23+
+                
+                Sears_HomePage_page_1+
+                Sears_SearchPage_page_1+
+                
+                Sears_ProductPage_page_1+
+                
+                Sears_Appliance_Refrigirators_page_1+
+                Sears_Appliances_Kitchen_page_1+
+                Sears_Appliance_Other_page_1+
+                Sears_Automotive_page_1+
+                
+                Sears_Clothing_page_1+
+                Sears_Shoes_page_1+
+             
+                
+                Sears_FitnessnSports_page_1+
+               
+                Sears_Home_BednBath_page_1+
+                
+                
+                Sears_LawnnGarden_page_1+
+                
+                Sears_Tools_page_1+
+                
+               
+                
+                Sears_Deals_page_1+
+                
+                
+                Sears_Order_Inquiry_CS_page_1+
+                
+               
+                
+                
+                Sears_Other_page_1+
+                
+                Sears_SearchPage_page_2+
+                
+                
+                
+                
+                
+                
+                
+                
+                Sears_TVnElectronics_page_2+
+                
+                
+                
+                
+                
+            
+                
+          
+                
+                Sears_Layaway_page_2+
+                
+                Sears_Order_Inquiry_CS_page_2+
+                
+                Sears_CheckOut_page_2+
+                
+           
+                Sears_Other_page_2+
+                
+                Sears_SearchPage_page_3+
+                
+                Sears_ProductPage_page_3+
+                
+                
+                
+                
+               
+               
+                Sears_Shoes_page_3+
+                
+                Sears_TVnElectronics_page_3+
+                
+                
+                
+                
+                
+                Sears_Deals_page_3+
+                Sears_Layaway_page_3+
+                
+                Sears_Order_Inquiry_CS_page_3+
+                Sears_Cart_page_3+
+                Sears_CheckOut_page_3+
+                
+                Sears_LoggedIn_page_3+
+                
+                Sears_HomePage_page_4+
+                Sears_SearchPage_page_4+
+                
+                Sears_ProductPage_page_4+
+                
+                
+                
+               
+           
+                
+                
+                Sears_Clothing_page_4+
+               
+                
+                Sears_Appliance_Other_page_4+
+                
+               
+              
+                
+               
+        
+                
+                
+                
+                Sears_Gifts_page_4+
+                Sears_Deals_page_4+
+                Sears_Layaway_page_4+
+               
+                Sears_Order_Inquiry_CS_page_4+
+                Sears_Cart_page_4+
+                Sears_CheckOut_page_4+
+                
+                
+                Sears_Other_page_4+
+                
+            
+                
+               
+                top1_90_120+
+                
+                
+                top1_180_240+
+                top1_240+
+            
+               
+                top2_180_240+
+                
+                
+                top3_50_90
+                
+            
+               
+                
+                
+                
+                
+               
+               ),  family = binomial(logit), data = model_data_page4)
+
+summary(model1)
+library(car)
+vif(model1)
+library(ROCR)
+library(MASS)
+
+model_data_page4$P.prob <- predict(model1,newdata=model_data_page4,type="response")
+valid_data_page4$P.prob <- predict(model1,newdata=valid_data_page4,type="response")
+pred4 <- prediction(model_data_page4$P.prob,model_data_page4[,"purchase_flag"])
+pred5 <- prediction(valid_data_page4$P.prob,valid_data_page4[,"purchase_flag"])
+performance(pred4,"auc")@y.values[[1]]
+performance(pred5,"auc")@y.values[[1]]
+write.csv(model_data_page4,"Page4_data_5.csv")
+write.csv(valid_data_page4,"Page4_valid_5.csv")
